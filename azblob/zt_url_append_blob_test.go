@@ -599,3 +599,4 @@ func (s *aztestsSuite) TestBlobAppendBlockIfMaxSizeFalse(c *chk.C) {
 	_, err := blobURL.AppendBlock(ctx, strings.NewReader(blockBlobDefaultData), AppendBlobAccessConditions{AppendPositionAccessConditions: AppendPositionAccessConditions{IfMaxSizeLessThanOrEqual: int64(len(blockBlobDefaultData) - 1)}}, nil, ClientProvidedKeyOptions{})
 	validateStorageError(c, err, ServiceCodeMaxBlobSizeConditionNotMet)
 }
+

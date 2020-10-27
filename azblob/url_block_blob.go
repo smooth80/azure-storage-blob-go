@@ -106,10 +106,6 @@ func (bb BlockBlobURL) StageBlockFromURL(ctx context.Context, base64BlockID stri
 		cpk.EncryptionKey, cpk.EncryptionKeySha256, cpk.EncryptionAlgorithm, // CPK
 		cpk.EncryptionScope, // CPK-N
 		destinationAccessConditions.pointers(), sourceIfModifiedSince, sourceIfUnmodifiedSince, sourceIfMatchETag, sourceIfNoneMatchETag, nil)
-}
-
-// CommitBlockList writes a blob by specifying the list of block IDs that make up the blob.
-// In order to be written as part of a blob, a block must have been successfully written
 // to the server in a prior PutBlock operation. You can call PutBlockList to update a blob
 // by uploading only those blocks that have changed, then committing the new and existing
 // blocks together. Any blocks not specified in the block list and permanently deleted.

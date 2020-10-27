@@ -1,6 +1,7 @@
 package azblob
 
 import (
+	"errors"
 	"net"
 	"net/url"
 	"strings"
@@ -133,6 +134,11 @@ func (up BlobURLParts) URL() url.URL {
 	}
 
 	rawQuery := up.UnparsedParams
+
+	// Check: Both snapshot and version id cannot be present in the request URL.
+	if up.Snapshot != "" && up.VersionID != "" {
+		errors.New("Snapshot and versioning cannot be enabled simultaneously")
+	}
 
 	//If no snapshot is initially provided, fill it in from the SAS query properties to help the user
 	if up.Snapshot == "" && !up.SAS.snapshotTime.IsZero() {
