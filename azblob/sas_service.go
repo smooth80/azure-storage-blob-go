@@ -239,6 +239,8 @@ func (p *ContainerSASPermissions) Parse(s string) error {
 			p.List = true
 		case 't':
 			p.Tag = true
+		case 'l':
+			p.List = true
 		default:
 			return fmt.Errorf("invalid permission: '%v'", r)
 		}
