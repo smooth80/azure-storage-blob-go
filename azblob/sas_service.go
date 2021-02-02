@@ -20,11 +20,20 @@ type BlobSASSignatureValues struct {
 	Identifier         string  `param:"si"`
 	ContainerName      string
 	BlobName           string // Use "" to create a Container SAS
+	Directory          string // non-"" for a directory SAS, sr=d
 	CacheControl       string // rscc
 	ContentDisposition string // rscd
 	ContentEncoding    string // rsce
 	ContentLanguage    string // rscl
 	ContentType        string // rsct
+	BlobVersion        string // sr=bv
+}
+
+func getDirectoryDepth(path string) string {
+	if path == "" {
+		return ""
+	}
+	return fmt.Sprint(strings.Count(path, "/") + 1)
 }
 
 // NewSASQueryParameters uses an account's StorageAccountCredential to sign this signature values to produce
@@ -44,7 +53,7 @@ func (v BlobSASSignatureValues) NewSASQueryParameters(credential StorageAccountC
 			return SASQueryParameters{}, err
 		}
 		v.Permissions = perms.String()
-	} else if v.Version != "" {
+	} else if v.BlobVersion != "" {
 		resource = "bv"
 		//Make sure the permission characters are in the correct order
 		perms := &BlobSASPermissions{}
@@ -52,6 +61,15 @@ func (v BlobSASSignatureValues) NewSASQueryParameters(credential StorageAccountC
 			return SASQueryParameters{}, err
 		}
 		v.Permissions = perms.String()
+	} else if v.Directory != "" {
+		resource = "d"
+		v.BlobName = ""
+		perms := &BlobSASPermissions{}
+		if err := perms.Parse(v.Permissions); err != nil {
+			return SASQueryParameters{}, err
+		}
+		v.Permissions = perms.String()
+
 	} else if v.BlobName == "" {
 		// Make sure the permission characters are in the correct order
 		perms := &ContainerSASPermissions{}
@@ -96,7 +114,7 @@ func (v BlobSASSignatureValues) NewSASQueryParameters(credential StorageAccountC
 		v.Permissions,
 		startTime,
 		expiryTime,
-		getCanonicalName(credential.AccountName(), v.ContainerName, v.BlobName),
+		getCanonicalName(credential.AccountName(), v.ContainerName, v.BlobName, v.Directory),
 		signedIdentifier,
 		v.IPRange.String(),
 		string(v.Protocol),
@@ -131,6 +149,7 @@ func (v BlobSASSignatureValues) NewSASQueryParameters(credential StorageAccountC
 		contentLanguage:    v.ContentLanguage,
 		contentType:        v.ContentType,
 		snapshotTime:       v.SnapshotTime,
+		signedDirectoryDepth: getDirectoryDepth(v.Directory),
 
 		// Calculated SAS signature
 		signature: signature,
@@ -150,12 +169,14 @@ func (v BlobSASSignatureValues) NewSASQueryParameters(credential StorageAccountC
 }
 
 // getCanonicalName computes the canonical name for a container or blob resource for SAS signing.
-func getCanonicalName(account string, containerName string, blobName string) string {
+func getCanonicalName(account string, containerName string, blobName string, directory string) string {
 	// Container: "/blob/account/containername"
 	// Blob:      "/blob/account/containername/blobname"
 	elements := []string{"/blob/", account, "/", containerName}
 	if blobName != "" {
 		elements = append(elements, "/", strings.Replace(blobName, "\\", "/", -1))
+	} else if directory != "" {
+		elements = append(elements, "/", directory)
 	}
 	return strings.Join(elements, "")
 }
